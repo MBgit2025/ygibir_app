@@ -1,0 +1,60 @@
+# ygibir_app/.gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+env/
+venv/
+.venv/
+
+# IDE / editor files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Streamlit state / config
+.streamlit/
+
+# Logs, temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*.old
+*.save
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment variables file
+.env
+.env.*
+
+# Ignore compiled visual studio / pyinstaller outputs (if any)
+*.manifest
+*.spec
+
+# Ignore large media or data files if any (optional)
+#*.mp4
+#*.mp3
+#*.zip

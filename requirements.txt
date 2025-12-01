@@ -1,0 +1,5 @@
+# ygibirApp/requirements.txt
+streamlit
+pandas
+openpyxl
+
