@@ -1,28 +1,84 @@
-#full_one_template
-# the name of the file is  TaxCalc_logic16Nov2025
+#TaxCalc_app.py
+
 
 import streamlit as st
 import pandas as pd
+from cryptography.fernet import Fernet
+from io import BytesIO
+import hashlib
 
-st.title("ቀላል ታክስ ማሰብያ  Easy Tax Estimator ")
+# Load Fernet key from Streamlit secrets
+fernet = Fernet(st.secrets["excel"]["key"].encode())
+
+def verify_integrity(encrypted_bytes):
+    try:
+        with open("tools/integrity.sha256") as f:
+            expected = f.read().strip()
+    except:
+        return True  # bypass if local file not present (Streamlit Cloud)
+
+    sha = hashlib.sha256()
+    sha.update(encrypted_bytes)
+    actual = sha.hexdigest()
+
+    return expected == actual
 
 
 # ---------------------------------------------------------------
 # 1. Load Excel Data
 # ---------------------------------------------------------------
 
-#@st.cache_data
-def load_data():
-    # Replace with the path to your Excel file
-    #file=r"C:\zGitDok\zleleoch\memokeria\TaxdataR.xlsx"
-    file=r"TaxdataR.xlsx"
-    sheet="Sheet1"
-    df_raw = pd.read_excel(file, sheet)
 
-    # Example: Ensure consistent column names
-    # Expected columns: Group, Product, Value, Other columns...
-    df_raw.columns = df_raw.columns.str.strip()
-    return df_raw
+def load_data():
+    key = st.secrets["excel"]["key"].encode()
+    fernet = Fernet(key)
+
+    # Load encrypted file
+    with open("TaxdataR_encrypted.bin", "rb") as f:
+        encrypted = f.read()
+
+    # Optional: verify integrity
+    # Verify integrity
+    # If integrity file is not present (Streamlit) skip
+    try:
+        with open("tools/integrity.sha256") as f:
+            checksum_expected = f.read().strip()
+
+        checksum_actual = hashlib.sha256(encrypted).hexdigest()
+
+        if checksum_actual != checksum_expected:
+            st.error("⚠ Data integrity check failed! File may be tampered.")
+            st.stop()
+    except:
+        pass # ignore locally if file missing
+
+    # Decrypt
+    decrypted_bytes = fernet.decrypt(encrypted)
+    df = pd.read_excel(BytesIO(decrypted_bytes))
+    return df
+
+df_raw = load_data()
+#st.dataframe(df_raw)
+
+st.success("Secure data loaded successfully.")
+
+
+st.title("ቀላል ታክስ ማሰብያ  Easy Tax Estimator ")
+
+
+
+#@st.cache_data
+##def load_data():
+##    # Replace with the path to your Excel file
+##    #file=r"C:\zGitDok\zleleoch\memokeria\TaxdataR.xlsx"
+##    file=r"TaxdataR.xlsx"
+##    sheet="Sheet1"
+##    df_raw = pd.read_excel(file, sheet)
+##
+##    # Example: Ensure consistent column names
+##    # Expected columns: Group, Product, Value, Other columns...
+##    df_raw.columns = df_raw.columns.str.strip()
+##    return df_raw
 
 df_raw = load_data()
 
@@ -32,7 +88,8 @@ df_raw = load_data()
 # ---------------------------------------------------------------
 
 #st.title("Please choose Your sources and the amaount taxable")
-st.markdown("<p style='font-size: larger; font-weight: bold; color: #800080;'>Please choose Your income source and the amount taxable</p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: larger; font-weight: bold; color: #800080;'>Please choose the tax revision, your income source and amount taxable carefully</p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: larger; font-weight: bold; color: #800080;'>እባክዎ መጀመሪያ የታክስ ማሻሻያውን ይምረጡ እና ከዚያ የገቢ ምንጭዎን እና ታክስ የሚከፈልበትን መጠን በጥንቃቄ ያስገቡ።</p>", unsafe_allow_html=True)
 st.markdown("<p style='font-size: smaller; font-weight: bold; color: #800800;'>Take note, this calculation may not be legally binding. It is meant only to provide estimates-ይህ ግብር ግምት ነው እና ከገቢ ባለስልጣናት ጋር ያረጋግጡ </p>", unsafe_allow_html=True)
 # Get unique groups from the Excel file
 group_options = sorted(df_raw["Revision"].unique())
@@ -251,7 +308,7 @@ if st.button("Submit"):
         f"The tax rule you chose is {version} . The taxable Income source you chose is {item}. The Income you provided is {value}. "
         f"Thus, total expected tax is {total_amount}\n"
         f"____________\n"
-        f"ይህ ግብር ግምት ነው እና ምንም አይነት ወለድ ቅጣት ጡረታ እና ተቀናሾችን ግምት ውስጥ አያስገባም. እባክዎን ከገቢ ባለስልጣናት ጋር ያረጋግጡ።"
+        f"ይህ ግብር ግምት ነው እና ምንም አይነት ወለድ፥ ቅጣት፥ ጡረታ እና ተቀናሾችን ግምት ውስጥ አያስገባም። እባክዎን ከገቢ ባለስልጣናት ጋር ያረጋግጡ።"
         f"የመረጡት የግብር ህግ {gizew} ነው። የመረጡት የገቢ ምንጭ {minch} ነው። ሪፖርት ያደረጉት ግብር የሚከፈልበት ገቢ {value} ነው።"
         f"ስለዚህ, አጠቃላይ የሚጠበቀው ግብር {total_amount} ነው።"    )
     
@@ -308,5 +365,7 @@ if st.button("Submit"):
         st.write(f"የመረጡት የግብር ህግ {gizew} ነው። የመረጡት የገቢ ምንጭ {minch} ነው። ሪፖርት ያደረጉት ግብር የሚከፈልበት ገቢ {value} ነው።")
         st.table(df_tax1)
         st.caption("Thanks for using this App, please send comments or corrections to: mihretbizu9@gmail.com ,thank you!")
-        st.caption("References used are:1) Income Tax Amendment - Proclamation No. 1395_2025 and 2) The Federal Income Tax Proclamation No. 97912016!")
+        st.caption("References used are: 1) Income Tax Amendment - Proclamation No. 1395_2025 and \n 2) The Federal Income Tax Proclamation No. 97912016!")
+        
+
 

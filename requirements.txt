@@ -2,4 +2,6 @@
 streamlit
 pandas
 openpyxl
+msoffcrypto-tool
+cryptography
 
