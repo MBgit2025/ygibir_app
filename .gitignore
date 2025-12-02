@@ -63,3 +63,4 @@ tools/
 *.key
 *.sha256
 .streamlit/secrets.toml
+TaxdataR
